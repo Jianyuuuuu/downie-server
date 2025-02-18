@@ -54,7 +54,7 @@ def extract_text_from_srt(srt_file):
         logger.error(f"提取SRT文本时出错: {str(e)}")
         raise
 
-def find_downloaded_files(video_id, download_dir="~/Downloads/Downie", target_url=None):
+def find_downloaded_files(video_id, download_dir="/Volumes/MINI_Plus_2TB/downie", target_url=None):
     """查找下载的音频和字幕文件"""
     logger.info(f"开始查找下载文件，视频ID: {video_id}")
     download_dir = os.path.expanduser(download_dir)
@@ -80,8 +80,8 @@ def find_downloaded_files(video_id, download_dir="~/Downloads/Downie", target_ur
                                 for srt_file_name in os.listdir(download_dir):
                                     if srt_file_name.endswith('.srt'):
                                         # 移除时间戳和其他后缀
-                                        clean_srt_name = srt_file_name.split(' - ')[0]
-                                        clean_audio_name = audio_base_name.split(' - ')[0]
+                                        clean_srt_name = srt_file_name.split('.srt')[0]
+                                        clean_audio_name = audio_base_name
                                         if clean_srt_name == clean_audio_name:
                                             srt_file = os.path.join(download_dir, srt_file_name)
                                             srt_files.append(srt_file)
