@@ -1,6 +1,12 @@
 # Downie YouTube 文本提取服务
 
-这是一个基于 Downie 的 YouTube 视频文本提取服务，可以自动从 YouTube 视频中提取字幕文本内容。该服务支持命令行工具和 HTTP API 两种使用方式。
+这是一个基于 Downie4 的 YouTube 视频文本提取服务，可以自动从 YouTube 视频中提取字幕文本内容。该服务支持命令行工具和 HTTP API 两种使用方式。
+可以对接N8N,Zapiers,dify等平台，用来获取youtube的视频文本内容。
+
+后续开发目标：
+
+- 增加纯下载功能
+- 其他拓展功能
 
 ## 功能特点
 
