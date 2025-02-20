@@ -63,50 +63,77 @@ if not os.path.exists(DEFAULT_DOWNLOAD_DIR):
     logger.info(f"创建下载目录: {DEFAULT_DOWNLOAD_DIR}")
 
 def find_downloaded_files(video_id, download_dir=DEFAULT_DOWNLOAD_DIR, target_url=None):
-    """查找下载的音频和字幕文件"""
+    """查找下载的音频和字幕文件
+    Args:
+        video_id: YouTube视频ID
+        download_dir: 下载目录路径，默认为DEFAULT_DOWNLOAD_DIR
+        target_url: 目标YouTube URL，用于匹配文件元数据
+    Returns:
+        tuple: (音频文件路径, 字幕文件路径列表)
+    """
+    # 记录开始查找文件的日志
     logger.info(f"开始查找下载文件，视频ID: {video_id}")
+    # 展开下载目录路径（处理~等路径符号）
     download_dir = os.path.expanduser(download_dir)
+    # 初始化音频文件和字幕文件列表为空
     audio_file = None
     srt_files = []
     
     try:
+        # 遍历下载目录中的所有文件
         for file in os.listdir(download_dir):
+            # 获取完整的文件路径
             file_path = os.path.join(download_dir, file)
+            # 检查是否为音频文件（mp3或m4a格式）
             if file.endswith(('.mp3', '.m4a')):
                 try:
+                    # 使用mdls命令获取文件的元数据（来源URL）
                     result = subprocess.run(['mdls', '-name', 'kMDItemWhereFroms', file_path], 
                                           capture_output=True, text=True)
+                    # 如果成功获取元数据
                     if result.returncode == 0:
+                        # 解析元数据输出行
                         metadata_lines = result.stdout.strip().split('\n')
                         for line in metadata_lines:
+                            # 清理元数据行的多余字符
                             line = line.strip().strip('"() ')
+                            # 如果提供了目标URL且在元数据中找到匹配
                             if target_url and target_url in line:
+                                # 记录找到的音频文件
                                 audio_file = file_path
                                 # 获取音频文件的基本名称（不包含扩展名）
                                 audio_base_name = os.path.splitext(os.path.basename(file_path))[0]
-                                # 查找所有匹配的srt文件
+                                # 在同一目录下查找匹配的srt字幕文件
                                 for srt_file_name in os.listdir(download_dir):
+                                    # 检查是否为srt字幕文件
                                     if srt_file_name.endswith('.srt'):
-                                        # 移除时间戳和其他后缀
+                                        # 获取字幕文件的基本名称（移除.srt后缀）
                                         clean_srt_name = srt_file_name.split('.srt')[0]
                                         clean_audio_name = audio_base_name
-                                        if clean_srt_name == clean_audio_name:
+                                        # 修改匹配逻辑：检查字幕文件名是否以音频文件名开头
+                                        if clean_srt_name.startswith(clean_audio_name):
+                                            # 找到匹配的字幕文件，添加到列表
                                             srt_file = os.path.join(download_dir, srt_file_name)
                                             srt_files.append(srt_file)
                                             logger.info(f"找到字幕文件: {srt_file}")
+                                # 记录找到的音频和字幕文件信息
                                 if audio_file:
                                     logger.info(f"找到音频文件: {audio_file}")
                                     logger.info(f"找到 {len(srt_files)} 个匹配的字幕文件")
                                     break
+                        # 如果找到了音频文件，跳出外层循环
                         if audio_file:
                             break
                 except Exception as e:
+                    # 记录读取文件元数据时的错误，继续处理下一个文件
                     logger.warning(f"读取文件元数据时出错: {str(e)}")
                     continue
     except Exception as e:
+        # 记录并抛出查找文件过程中的错误
         logger.error(f"查找下载文件时出错: {str(e)}")
         raise
     
+    # 返回找到的音频文件路径和字幕文件路径列表
     return audio_file, srt_files
 
 def process_youtube_url(url):
