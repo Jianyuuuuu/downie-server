@@ -7,7 +7,7 @@ import subprocess
 import logging
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
-from downie_downloader import send_to_downie
+from downie_core import downie_download
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,15 @@ def extract_text_from_srt(srt_file):
         logger.error(f"提取SRT文本时出错: {str(e)}")
         raise
 
-def find_downloaded_files(video_id, download_dir="/Volumes/MINI_Plus_2TB/downie", target_url=None):
+# 默认下载目录配置
+DEFAULT_DOWNLOAD_DIR = os.path.expanduser("~/Downloads/Downie_Transcripts")
+
+# 确保下载目录存在
+if not os.path.exists(DEFAULT_DOWNLOAD_DIR):
+    os.makedirs(DEFAULT_DOWNLOAD_DIR)
+    logger.info(f"创建下载目录: {DEFAULT_DOWNLOAD_DIR}")
+
+def find_downloaded_files(video_id, download_dir=DEFAULT_DOWNLOAD_DIR, target_url=None):
     """查找下载的音频和字幕文件"""
     logger.info(f"开始查找下载文件，视频ID: {video_id}")
     download_dir = os.path.expanduser(download_dir)
@@ -110,9 +118,10 @@ def process_youtube_url(url):
         raise ValueError("无效的YouTube URL")
     
     logger.info("正在使用Downie下载视频...")
-    if not send_to_downie(url, postprocessing="audio"):
-        logger.error("Downie下载失败")
-        raise Exception("Downie下载失败")
+    success, message = downie_download(url, format_type="mp3", destination=DEFAULT_DOWNLOAD_DIR)
+    if not success:
+        logger.error(f"Downie下载失败: {message}")
+        raise Exception(f"Downie下载失败: {message}")
     
     logger.info("等待下载完成...")
     max_attempts = 60  # 2分钟等待时间

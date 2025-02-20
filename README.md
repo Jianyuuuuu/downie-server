@@ -29,7 +29,7 @@
 - macOS 系统
 - Python 3.8 或更高版本
 - [Downie 4](https://software.charliemonroe.net/downie/) 已安装
-- 确保 Downie 已配置好 YouTube 下载功能，并设置好下载目录。
+- 确保 Downie 已配置好 YouTube 下载功能
 
 ## 安装配置
 
@@ -41,16 +41,28 @@ cd downie-server
 pip install -r requirements.txt
 ```
 
-2. 确保 Downie 的下载目录设置为默认位置（~/Downloads/Downie）
+2. 配置下载目录：
+   - 默认下载目录为 `~/Downloads/Downie_Transcripts`
+   - 可以通过修改 `downie_youtube_transcript.py` 文件中的 `DEFAULT_DOWNLOAD_DIR` 变量来更改下载目录
+   - 程序会自动创建下载目录（如果不存在）
 
 ## 使用方法
 
 ### 命令行工具
 
-1. 直接下载视频：
+1. 使用核心下载功能：
 
 ```bash
-python downie_downloader.py <YouTube-URL>
+python downie_core.py <YouTube-URL> [目标文件夹路径] [格式]
+```
+
+示例：
+```bash
+# 基本下载
+python downie_core.py "https://www.youtube.com/watch?v=xxxxx"
+
+# 指定下载路径和格式
+python downie_core.py "https://www.youtube.com/watch?v=xxxxx" "~/Downloads/Videos" mp4
 ```
 
 2. 提取视频文本：
@@ -75,6 +87,13 @@ python downie_youtube_transcript_server.py
   ```
   GET /
   ```
+  响应示例：
+  ```json
+  {
+      "status": "running",
+      "message": "YouTube文本提取服务（Downie）正在运行"
+  }
+  ```
 
 - 提取文本：
   ```
@@ -86,27 +105,41 @@ python downie_youtube_transcript_server.py
   }
   ```
 
-响应示例：
-```json
-{
-    "text": "提取的文本内容...",
-    "status": "success",
-    "timestamp": "2024-01-01T12:00:00",
-    "request_id": "202401011200-123456"
-}
-```
+  响应示例：
+  ```json
+  {
+      "text": "提取的文本内容...",
+      "status": "success",
+      "timestamp": "2024-01-01T12:00:00",
+      "request_id": "202401011200-123456"
+  }
+  ```
 
-## 注意事项
+## 项目结构
 
-1. 确保 Downie 已正确安装并能正常下载 YouTube 视频
-2. 视频必须包含字幕，否则无法提取文本
-3. 下载目录默认为 ~/Downloads/Downie，如需修改请更新代码中的路径
-4. API 服务默认端口为 3200，可在代码中修改
+主要模块说明：
+
+- `downie_core.py`: 核心下载功能
+  - 提供 URL Scheme 方式调用 Downie 进行视频下载
+  - 支持指定下载格式和目标文件夹
+  - 提供同步的下载请求接口
+
+- `downie_youtube_transcript.py`: 文本提取核心功能
+  - 处理 YouTube URL 并提取视频 ID
+  - 使用 Downie 下载视频并获取字幕
+  - 提供字幕文本提取功能
+  - 管理下载目录和临时文件清理
+
+- `downie_youtube_transcript_server.py`: HTTP API 服务
+  - 提供 RESTful API 接口
+  - 支持异步请求处理
+  - 包含请求日志和错误处理
 
 ## 日志
 
 - 服务运行日志保存在 `youtube_text_api.log`
 - 包含详细的操作记录和错误信息
+- 日志格式：时间 - 日志级别 - 消息内容
 
 ## 错误处理
 
@@ -117,18 +150,18 @@ python downie_youtube_transcript_server.py
 3. "下载超时"：检查网络连接和 Downie 设置
 4. "无法获取字幕文件"：确认视频是否包含字幕
 
-## 开发说明
+## 注意事项
 
-主要模块说明：
-
-- `downie_downloader.py`: Downie 下载工具
-- `downie_youtube_transcript.py`: 文本提取核心功能
-- `downie_youtube_transcript_server.py`: HTTP API 服务
-
-## 许可证
-
-[添加许可证信息]
+1. 确保 Downie 已正确安装，并能正常下载你想要的视频。如果是Youtube，可能需要用户登录。
+2. 使用Transcript功能的时候，视频必须包含字幕，否则无法提取文本
+3. 下载目录默认为 `~/Downloads/Downie_Transcripts`，可在 `downie_youtube_transcript.py` 中第58行修改
+4. API 服务默认端口为 3200，可在 `downie_youtube_transcript_server.py` 中修改
+5. 程序会自动清理下载的临时文件（音频和字幕文件）
 
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request
+
+## 许可证
+
+[添加许可证信息]
