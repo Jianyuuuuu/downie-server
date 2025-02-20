@@ -1,15 +1,11 @@
-# Downie YouTube 文本提取服务
+# Downie 服务器
 
-这是一个基于 Downie4 的 YouTube 视频文本提取服务，可以自动从 YouTube 视频中提取字幕文本内容。该服务支持命令行工具和 HTTP API 两种使用方式。
-可以对接N8N,Zapiers,dify等平台，用来获取youtube的视频文本内容。
-
-后续开发目标：
-
-- 增加纯下载功能
-- 其他拓展功能
+这是一个基于 Downie4 的服务器，提供 YouTube 视频下载和字幕文本提取功能。该服务支持命令行工具和 HTTP API 两种使用方式。
+可以对接 N8N, Zapiers, Dify 等平台，用来下载视频或获取 YouTube 的视频文本内容。
 
 ## 功能特点
 
+- 支持 YouTube 视频下载，可指定下载目录和格式
 - 支持从 YouTube 视频中提取字幕文本
 - 自动使用 Downie 下载视频并获取字幕
 - 提供命令行工具和 HTTP API 接口
@@ -76,7 +72,7 @@ python downie_youtube_transcript.py <YouTube-URL>
 1. 启动服务器：
 
 ```bash
-python downie_youtube_transcript_server.py
+python downie_server.py
 ```
 
 服务器将在 http://0.0.0.0:3200 启动
@@ -91,7 +87,29 @@ python downie_youtube_transcript_server.py
   ```json
   {
       "status": "running",
-      "message": "YouTube文本提取服务（Downie）正在运行"
+      "message": "Downie服务器正在运行"
+  }
+  ```
+
+- 下载视频：
+  ```
+  POST /download
+  Content-Type: application/json
+  
+  {
+      "url": "https://www.youtube.com/watch?v=xxxxx",
+      "destination": "~/Downloads/downie"  // 可选，默认为 ~/Downloads/downie
+  }
+  ```
+
+  响应示例：
+  ```json
+  {
+      "status": "success",
+      "message": "下载请求已成功发送到Downie",
+      "timestamp": "2024-01-01T12:00:00",
+      "request_id": "202401011200-123456",
+      "destination": "/Users/username/Downloads/downie"
   }
   ```
 
@@ -130,14 +148,15 @@ python downie_youtube_transcript_server.py
   - 提供字幕文本提取功能
   - 管理下载目录和临时文件清理
 
-- `downie_youtube_transcript_server.py`: HTTP API 服务
+- `downie_server.py`: HTTP API 服务
   - 提供 RESTful API 接口
+  - 支持视频下载和文本提取功能
   - 支持异步请求处理
   - 包含请求日志和错误处理
 
 ## 日志
 
-- 服务运行日志保存在 `youtube_text_api.log`
+- 服务运行日志保存在 `downie_server.log`
 - 包含详细的操作记录和错误信息
 - 日志格式：时间 - 日志级别 - 消息内容
 

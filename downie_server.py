@@ -3,9 +3,11 @@
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from downie_youtube_transcript import process_youtube_url
+from downie_core import downie_download
 import uvicorn
 import logging
 from datetime import datetime
+import os
 
 # 配置日志记录
 logging.basicConfig(
@@ -13,19 +15,23 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('youtube_text_api.log')
+        logging.FileHandler('downie_server.log')
     ]
 )
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="YouTube Text Extractor API",
-    description="从YouTube视频中提取文本内容的API服务",
+    title="Downie Server API",
+    description="Downie服务器API，支持YouTube视频下载和字幕文本提取功能",
     version="1.0.0"
 )
 
 class YouTubeURL(BaseModel):
     url: str
+
+class DownloadRequest(BaseModel):
+    url: str
+    destination: str = os.path.expanduser("~/Downloads/downie")
 
 class TextResponse(BaseModel):
     text: str
@@ -75,11 +81,53 @@ async def extract_text(youtube_url: YouTubeURL, request: Request):
             }
         )
 
+@app.post("/download")
+async def download_video(download_req: DownloadRequest, request: Request):
+    request_id = f"{datetime.now().strftime('%Y%m%d%H%M%S')}-{id(request)}"
+    logger.info(f"Processing download request for URL: {download_req.url} (Request ID: {request_id})")
+    
+    try:
+        # 确保下载目录存在，并获取绝对路径
+        destination = os.path.abspath(os.path.expanduser(download_req.destination))
+        os.makedirs(destination, exist_ok=True)
+        logger.info(f"确保下载目录存在: {destination}")
+        
+        # 调用下载功能
+        success, message = downie_download(
+            url=download_req.url,
+            format_type="mp4",
+            destination=destination
+        )
+        
+        if not success:
+            raise Exception(message)
+            
+        response = {
+            "status": "success",
+            "message": message,
+            "timestamp": datetime.now().isoformat(),
+            "request_id": request_id,
+            "destination": destination
+        }
+        logger.info(f"Successfully initiated download (Request ID: {request_id})")
+        return response
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(f"Error processing download (Request ID: {request_id}): {error_msg}")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": error_msg,
+                "timestamp": datetime.now().isoformat(),
+                "request_id": request_id
+            }
+        )
+
 @app.get("/")
 async def root():
     logger.info("Health check endpoint accessed")
-    return {"status": "running", "message": "YouTube文本提取服务（Downie）正在运行"}
+    return {"status": "running", "message": "Downie服务器正在运行"}
 
 if __name__ == "__main__":
-    logger.info("Starting YouTube Text Extractor API server...")
-    uvicorn.run("downie_youtube_transcript_server:app", host="0.0.0.0", port=3200, reload=True)
+    logger.info("Downie服务器正在运行...")
+    uvicorn.run("downie_server:app", host="0.0.0.0", port=3200, reload=True)

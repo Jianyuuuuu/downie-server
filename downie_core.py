@@ -34,9 +34,12 @@ def downie_download(url, format_type="mp4", destination=None):
         if format_type:
             action_url += f"&postprocessing={format_type}"
         
-        # 如果提供了目标文件夹，添加destination参数
+        # 如果提供了目标文件夹，展开并编码路径
         if destination:
-            action_url += f"&destination={quote(destination, safe='')}"
+            # 确保路径被展开为绝对路径
+            expanded_path = os.path.expanduser(os.path.expandvars(destination))
+            # 编码路径
+            action_url += f"&destination={quote(expanded_path, safe='')}"
 
         # 发送到Downie进行下载
         subprocess.run(['open', action_url])
